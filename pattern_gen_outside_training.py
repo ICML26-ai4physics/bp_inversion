@@ -53,7 +53,6 @@ if __name__ == "__main__":
     else:
         device = torch.device("cpu")
     print("device:", device)
-    # To produce slope compare plots, set the next line to True and put the pair of losses in compare_pair.
     save_animation = False
     three_d = True
     vgg = VGGGramLoss(device)
@@ -237,7 +236,7 @@ if __name__ == "__main__":
 
                     used_left = []
                     used_right = []
-                    min_gap = 0.5
+                    min_gap = 7.2  # the tested best option
                     for lv in loss_values:
                         color = 'steelblue' if lv[0] > lv[1] else 'tomato'
                         ax.plot([0, 1], [lv[0], lv[1]], color=color, alpha=0.7, linewidth=2, marker='o', markersize=8)

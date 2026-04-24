@@ -8,6 +8,7 @@ from matplotlib.colors import Normalize, LinearSegmentedColormap
 import sys
 import numpy as np
 from typing import Union
+import matplotlib.gridspec as gridspec
 np.set_printoptions(threshold=sys.maxsize)
 
 cmap = LinearSegmentedColormap.from_list("mycmap", ["#604957", "#C1D795", "#C1D795", "#C1D795", "#739F62", "#739F62"])
@@ -28,39 +29,50 @@ def get_initial_artists(v: Union[torch.Tensor, list], per_line: int = 4):
         l = len(v)
         assert l > 0
         w, h = per_line, (l - 1) // per_line + 1
-        fig, axes = plt.subplots(h, w, figsize=(3*w, 3*h))
+
+        # One more column for color bar
+        gs = gridspec.GridSpec(h, w + 1, width_ratios=[1] * w + [0.08],
+                               figure=plt.figure(figsize=(3 * w + 0.1, 3 * h)))
+        fig = gs.figure
+        axes = [fig.add_subplot(gs[i // w, i % w]) for i in range(h * w)]
+        cax = fig.add_subplot(gs[h - 1, w])
+
         im_list = []
-        for idx, ax in enumerate(axes.flatten()):
-            if idx == h * w - 1:
-                divider = make_axes_locatable(ax)
-                cax = divider.append_axes('right', size='5%', pad=0.05)
-                fig.colorbar(im, cax=cax, orientation='vertical')
+        for idx, ax in enumerate(axes):
             if idx >= l:
                 ax.cla()
-                ax.axis("off")
-                ax.text(0.47, 0.46, "x", fontsize=22, color="gray")
+                ax.set_xticks([])
+                ax.set_yticks([])
+                ax.text(0.47, 0.46, "No Image", fontsize=22, color="gray")
                 continue
             im = ax.imshow(v[idx].cpu().numpy(), cmap='Grays', animated=True)
-            ax.set_title(f"{idx+1}")
-            ax.axis("off")
+            # ax.set_title(f"{idx + 1}")
+            ax.set_xticks([])
+            ax.set_yticks([])
             im_list.append(im)
             if idx == 0:
                 txt = ax.text(
-                    2, 2, "",  # left top
+                    2, 2, "",
                     color="white",
                     fontsize=10,
                     ha="left",
                     va="top",
-                    bbox=dict(facecolor="black", alpha=0.5, pad=2)
+                    bbox=dict(facecolor="black", alpha=0.5, pad=0)
                 )
+
+        fig.colorbar(im, cax=cax, orientation='vertical', label='$v$')
+        # fig.tight_layout()
+        pos = axes[l - 1].get_position()
+        cax.set_position([pos.x1, pos.y0, 0.005, pos.height])
         return fig, im_list, txt
 
     fig, ax = plt.subplots(1, 1, figsize=(3.7, 3.7))
     im = ax.imshow(v.cpu().numpy(), animated=True, vmin=0, cmap="Grays")
-    ax.axis('off')
+    ax.set_xticks([])
+    ax.set_yticks([])
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size='5%', pad=0.05)
-    fig.colorbar(im, cax=cax, orientation='vertical')
+    fig.colorbar(im, cax=cax, orientation='vertical', label='$v$')
 
     txt = ax.text(
         2, 2, "",               # left top
@@ -68,7 +80,7 @@ def get_initial_artists(v: Union[torch.Tensor, list], per_line: int = 4):
         fontsize=10,
         ha="left",
         va="top",
-        bbox=dict(facecolor="black", alpha=0.5, pad=2)
+        bbox=dict(facecolor="black", alpha=0.5, pad=0)
     )
 
     return fig, im, txt
